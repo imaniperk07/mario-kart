@@ -25,15 +25,28 @@ var currentTrack = 0;
 var tracks = [
     {
         name: "Mushroom Circuit",
-        road: { x: 50, y: 50, width: 500, height: 300 }
+        roads: [
+            { x: 80, y: 50, w: 440, h: 60 },
+            { x: 460, y: 50, w: 60, h: 260 },
+            { x: 80, y: 250, w: 440, h: 60 },
+            { x: 80, y: 50, w: 60, h: 260 }
+        ]
     },
     {
         name: "Desert Dash",
-        road: { x: 100, y: 80, width: 400, height: 240 }
+        roads: [
+            { x: 100, y: 80, w: 400, h: 60 },
+            { x: 300, y: 80, w: 60, h: 240 }
+        ]
     },
     {
         name: "Rainbow Loop",
-        road: { x: 60, y: 100, width: 480, height: 200 }
+        roads: [
+            { x: 100, y: 120, w: 350, h: 50 },
+            { x: 100, y: 220, w: 350, h: 50 },
+            { x: 100, y: 120, w: 50, h: 150 },
+            { x: 400, y: 120, w: 50, h: 150 }
+        ]
     }
 ];
 
@@ -106,20 +119,25 @@ function update() {
 // Draw Track
 // ===============================
 function drawTrack() {
-    // Grass
+    // Draw grass
     ctx.fillStyle = "#4caf50";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Road
+    // Draw each road piece
     ctx.fillStyle = "#777";
-    var road = tracks[currentTrack].road;
-    ctx.fillRect(road.x, road.y, road.width, road.height);
+    var roads = tracks[currentTrack].roads;
 
-    // Track Name
+    for (var i = 0; i < roads.length; i++) {
+        var r = roads[i];
+        ctx.fillRect(r.x, r.y, r.w, r.h);
+    }
+
+    // Track name
     ctx.fillStyle = "white";
     ctx.font = "16px Arial";
     ctx.fillText(tracks[currentTrack].name, 10, 20);
 }
+
 
 // ===============================
 // Draw Kart
