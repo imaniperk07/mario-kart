@@ -5,51 +5,65 @@ var canvas = document.getElementById("gameCanvas");
 var ctx = canvas.getContext("2d");
 
 // ===============================
-// Kart Object
+// Kart
 // ===============================
 var kart = {
-    x: 120,
-    y: 80,
+    x: 200,
+    y: 120,
     width: 30,
     height: 20,
     speed: 3
 };
 
 // ===============================
-// Tracks (MADE OF MULTIPLE ROADS)
+// Tracks with BIOMES + LOOPS
 // ===============================
 var currentTrack = 0;
 
 var tracks = [
     {
         name: "Mushroom Circuit",
+        grass: "#4caf50",
+        roadColor: "#808080",
+        startX: 200,
+        startY: 120,
         roads: [
-            { x: 80, y: 40, w: 440, h: 60 },
-            { x: 460, y: 40, w: 60, h: 240 },
-            { x: 80, y: 220, w: 440, h: 60 },
-            { x: 80, y: 40, w: 60, h: 240 }
+            { x: 80, y: 50, w: 440, h: 60 },
+            { x: 460, y: 50, w: 60, h: 260 },
+            { x: 80, y: 250, w: 440, h: 60 },
+            { x: 80, y: 50, w: 60, h: 260 }
         ]
     },
     {
         name: "Desert Dash",
+        grass: "#e8d7a3",
+        roadColor: "#9e9e9e",
+        startX: 180,
+        startY: 110,
         roads: [
-            { x: 100, y: 80, w: 400, h: 60 },
-            { x: 300, y: 80, w: 60, h: 240 }
+            { x: 120, y: 80, w: 360, h: 60 },
+            { x: 420, y: 80, w: 60, h: 180 },
+            { x: 180, y: 200, w: 300, h: 60 },
+            { x: 120, y: 80, w: 60, h: 180 }
         ]
     },
     {
         name: "Rainbow Loop",
+        grass: "#6a5acd",
+        roadColor: "#888",
+        startX: 200,
+        startY: 150,
         roads: [
             { x: 120, y: 120, w: 360, h: 50 },
-            { x: 120, y: 220, w: 360, h: 50 },
-            { x: 120, y: 120, w: 50, h: 150 },
-            { x: 430, y: 120, w: 50, h: 150 }
+            { x: 120, y: 240, w: 360, h: 50 },
+            { x: 120, y: 120, w: 50, h: 170 },
+            { x: 430, y: 120, w: 50, h: 170 }
         ]
     }
 ];
 
 // ===============================
-// Keyboard Controls
+// Keyboard Input
 // ===============================
 var keys = {};
 
@@ -70,25 +84,81 @@ function update() {
     if (keys["ArrowLeft"]) kart.x -= kart.speed;
     if (keys["ArrowRight"]) kart.x += kart.speed;
 
-    // Keep on screen
-    if (kart.x < 0) kart.x = 0;
-    if (kart.y < 0) kart.y = 0;
-    if (kart.x + kart.width > canvas.width) {
-        kart.x = canvas.width - kart.width;
-    }
-    if (kart.y + kart.height > canvas.height) {
-        kart.y = canvas.height - kart.height;
-    }
+    // Screen limits
+    kart.x = Math.max(0, Math.min(canvas.width - kart.width, kart.x));
+    kart.y = Math.max(0, Math.min(canvas.height - kart.height, kart.y));
 
-    // Switch tracks with T
+    // Switch track
     if (keys["t"]) {
-        currentTrack++;
-        if (currentTrack >= tracks.length) {
-            currentTrack = 0;
-        }
-        kart.x = 120;
-        kart.y = 80;
+        currentTrack = (currentTrack + 1) % tracks.length;
+        kart.x = tracks[currentTrack].startX;
+        kart.y = tracks[currentTrack].startY;
         keys["t"] = false;
+    }
+}
+
+// ===============================
+// Draw a Single Road Segment
+// ===============================
+function drawRoadPiece(r, roadColor) {
+    // Main road
+    ctx.fillStyle = roadColor;
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+
+    // Red & White curbs
+    var curbSize = 6;
+
+    // Top
+    drawCurb(r.x, r.y, r.w, curbSize, true);
+    // Bottom
+    drawCurb(r.x, r.y + r.h - curbSize, r.w, curbSize, false);
+    // Left
+    drawCurb(r.x, r.y, curbSize, r.h, true);
+    // Right
+    drawCurb(r.x + r.w - curbSize, r.y, curbSize, r.h, false);
+
+    // Center dashed line
+    drawCenterLine(r);
+}
+
+// ===============================
+// Draw Red/White Curbs
+// ===============================
+function drawCurb(x, y, w, h, startRed) {
+    var stripe = 10;
+
+    for (var i = 0; i < (w > h ? w : h); i += stripe) {
+        ctx.fillStyle = startRed ? "red" : "white";
+        if (w > h) {
+            ctx.fillRect(x + i, y, stripe, h);
+        } else {
+            ctx.fillRect(x, y + i, w, stripe);
+        }
+        startRed = !startRed;
+    }
+}
+
+// ===============================
+// Draw Center Dashed Line
+// ===============================
+function drawCenterLine(r) {
+    ctx.fillStyle = "white";
+
+    var dashLength = 14;
+    var gap = 10;
+
+    if (r.w > r.h) {
+        // Horizontal road
+        var centerY = r.y + r.h / 2 - 2;
+        for (var x = r.x + 10; x < r.x + r.w - 10; x += dashLength + gap) {
+            ctx.fillRect(x, centerY, dashLength, 4);
+        }
+    } else {
+        // Vertical road
+        var centerX = r.x + r.w / 2 - 2;
+        for (var y = r.y + 10; y < r.y + r.h - 10; y += dashLength + gap) {
+            ctx.fillRect(centerX, y, 4, dashLength);
+        }
     }
 }
 
@@ -96,34 +166,32 @@ function update() {
 // Draw Track
 // ===============================
 function drawTrack() {
-    // Grass background
-    ctx.fillStyle = "#4caf50";
+    var track = tracks[currentTrack];
+
+    // Grass / biome
+    ctx.fillStyle = track.grass;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw road pieces
-    ctx.fillStyle = "#777";
-    var roadPieces = tracks[currentTrack].roads;
-
-    for (var i = 0; i < roadPieces.length; i++) {
-        var r = roadPieces[i];
-        ctx.fillRect(r.x, r.y, r.w, r.h);
+    // Roads
+    for (var i = 0; i < track.roads.length; i++) {
+        drawRoadPiece(track.roads[i], track.roadColor);
     }
 
     // Track name
     ctx.fillStyle = "white";
     ctx.font = "16px Arial";
-    ctx.fillText(tracks[currentTrack].name, 10, 20);
+    ctx.fillText(track.name, 10, 20);
 }
 
 // ===============================
 // Draw Kart
 // ===============================
 function drawKart() {
-    // Kart body
+    // Body
     ctx.fillStyle = "red";
     ctx.fillRect(kart.x, kart.y + 6, 30, 14);
 
-    // Driver head
+    // Head
     ctx.fillStyle = "#ffd1a9";
     ctx.beginPath();
     ctx.arc(kart.x + 15, kart.y, 6, 0, Math.PI * 2);
