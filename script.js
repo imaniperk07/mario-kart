@@ -1,161 +1,73 @@
-// ===============================
+// ============================
 // Canvas Setup
-// ===============================
+// ============================
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// ===============================
+// ============================
 // Kart
-// ===============================
+// ============================
 const kart = {
-    x: 300,
+    x: 400,
     y: 300,
-    width: 30,
-    height: 20,
     speed: 3
 };
 
-// ===============================
-// Camera (pseudo first-person)
-// ===============================
-const camera = {
-    x: 0,
-    y: 0
+// ============================
+// Camera
+// ============================
+const camera = { x: 0, y: 0 };
+
+// ============================
+// Single Complex Track
+// ============================
+const track = {
+    grass: "#4caf50",
+    road: "#777",
+    curbSize: 12,
+
+    // Main road shape (polygon path)
+    path: [
+        { x: 200, y: 100 },
+        { x: 600, y: 100 },
+        { x: 650, y: 150 },
+        { x: 650, y: 350 },
+        { x: 600, y: 400 },
+        { x: 300, y: 400 },
+        { x: 250, y: 350 },
+        { x: 250, y: 250 },
+        { x: 450, y: 250 },
+        { x: 500, y: 200 },
+        { x: 500, y: 150 },
+        { x: 200, y: 150 }
+    ],
+    width: 80
 };
 
-// ===============================
-// Tracks (COMPLEX + LONG)
-// ===============================
-let currentTrack = 0;
-
-const tracks = [
-    {
-        name: "Mushroom Circuit",
-        grass: "#4caf50",
-        road: "#7a7a7a",
-        start: { x: 300, y: 300 },
-        segments: [
-            { x: 200, y: 100, w: 400, h: 60 },
-            { x: 540, y: 100, w: 60, h: 300 },
-            { x: 200, y: 340, w: 400, h: 60 },
-            { x: 200, y: 100, w: 60, h: 300 },
-            { x: 260, y: 200, w: 280, h: 60 }
-        ]
-    },
-    {
-        name: "Desert Dash",
-        grass: "#e8d7a3",
-        road: "#9a9a9a",
-        start: { x: 250, y: 160 },
-        segments: [
-            { x: 150, y: 120, w: 500, h: 60 },
-            { x: 590, y: 120, w: 60, h: 220 },
-            { x: 300, y: 280, w: 350, h: 60 },
-            { x: 300, y: 200, w: 60, h: 140 },
-            { x: 150, y: 200, w: 210, h: 60 }
-        ]
-    },
-    {
-        name: "Rainbow Run",
-        grass: "#5e4ca1",
-        road: "#8f8f8f",
-        start: { x: 400, y: 200 },
-        segments: [
-            { x: 200, y: 140, w: 500, h: 50 },
-            { x: 650, y: 140, w: 50, h: 220 },
-            { x: 250, y: 310, w: 450, h: 50 },
-            { x: 200, y: 140, w: 50, h: 220 },
-            { x: 280, y: 220, w: 350, h: 50 }
-        ]
-    }
-];
-
-// ===============================
-// Keyboard Input
-// ===============================
+// ============================
+// Input
+// ============================
 const keys = {};
-
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
 
-// ===============================
-// Update Logic
-// ===============================
+// ============================
+// Update
+// ============================
 function update() {
     if (keys["ArrowUp"]) kart.y -= kart.speed;
     if (keys["ArrowDown"]) kart.y += kart.speed;
     if (keys["ArrowLeft"]) kart.x -= kart.speed;
     if (keys["ArrowRight"]) kart.x += kart.speed;
 
-    // Switch tracks
-    if (keys["t"]) {
-        currentTrack = (currentTrack + 1) % tracks.length;
-        kart.x = tracks[currentTrack].start.x;
-        kart.y = tracks[currentTrack].start.y;
-        keys["t"] = false;
-    }
-
-    // Camera follows kart
     camera.x = kart.x - canvas.width / 2;
     camera.y = kart.y - canvas.height / 2;
 }
 
-// ===============================
-// Draw Road Segment (OUTSIDE CURBS)
-// ===============================
-function drawRoadSegment(seg, roadColor) {
-    // Road
-    ctx.fillStyle = roadColor;
-    ctx.fillRect(seg.x, seg.y, seg.w, seg.h);
-
-    const curb = 10;
-
-    // Outside curbs
-    drawStripe(seg.x - curb, seg.y - curb, seg.w + curb * 2, curb, true); // top
-    drawStripe(seg.x - curb, seg.y + seg.h, seg.w + curb * 2, curb, false); // bottom
-    drawStripe(seg.x - curb, seg.y, curb, seg.h, true); // left
-    drawStripe(seg.x + seg.w, seg.y, curb, seg.h, false); // right
-
-    drawCenterLine(seg);
-}
-
-// ===============================
-// Red / White curb stripes
-// ===============================
-function drawStripe(x, y, w, h, startRed) {
-    const size = 10;
-    for (let i = 0; i < (w > h ? w : h); i += size) {
-        ctx.fillStyle = startRed ? "red" : "white";
-        if (w > h) ctx.fillRect(x + i, y, size, h);
-        else ctx.fillRect(x, y + i, w, size);
-        startRed = !startRed;
-    }
-}
-
-// ===============================
-// Center dashed line
-// ===============================
-function drawCenterLine(seg) {
-    ctx.fillStyle = "white";
-    if (seg.w > seg.h) {
-        const y = seg.y + seg.h / 2 - 2;
-        for (let x = seg.x + 10; x < seg.x + seg.w - 10; x += 24) {
-            ctx.fillRect(x, y, 16, 4);
-        }
-    } else {
-        const x = seg.x + seg.w / 2 - 2;
-        for (let y = seg.y + 10; y < seg.y + seg.h - 10; y += 24) {
-            ctx.fillRect(x, y, 4, 16);
-        }
-    }
-}
-
-// ===============================
-// Draw World
-// ===============================
-function draw() {
-    const track = tracks[currentTrack];
-
+// ============================
+// Draw Track Path
+// ============================
+function drawTrack() {
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
 
@@ -163,33 +75,83 @@ function draw() {
     ctx.fillStyle = track.grass;
     ctx.fillRect(camera.x, camera.y, canvas.width * 2, canvas.height * 2);
 
-    // Roads
-    track.segments.forEach(seg => drawRoadSegment(seg, track.road));
+    // Road
+    ctx.strokeStyle = track.road;
+    ctx.lineWidth = track.width;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
-    // Kart
+    ctx.beginPath();
+    ctx.moveTo(track.path[0].x, track.path[0].y);
+    for (let i = 1; i < track.path.length; i++) {
+        ctx.lineTo(track.path[i].x, track.path[i].y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    // Red/white curb (outside)
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = track.width + track.curbSize * 2;
+    ctx.stroke();
+
+    // White curb overlay
+    ctx.setLineDash([20, 20]);
+    ctx.strokeStyle = "white";
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Center dashed line
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 4;
+    ctx.setLineDash([15, 20]);
+
+    ctx.beginPath();
+    ctx.moveTo(track.path[0].x, track.path[0].y);
+    for (let i = 1; i < track.path.length; i++) {
+        ctx.lineTo(track.path[i].x, track.path[i].y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+
+    ctx.restore();
+}
+
+// ============================
+// Draw Kart
+// ============================
+function drawKart() {
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+
     ctx.fillStyle = "red";
-    ctx.fillRect(kart.x, kart.y + 6, 30, 14);
+    ctx.fillRect(kart.x - 12, kart.y - 5, 24, 10);
 
     ctx.fillStyle = "#ffd1a9";
     ctx.beginPath();
-    ctx.arc(kart.x + 15, kart.y, 6, 0, Math.PI * 2);
+    ctx.arc(kart.x, kart.y - 10, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "black";
-    ctx.fillRect(kart.x - 4, kart.y + 6, 6, 8);
-    ctx.fillRect(kart.x + 28, kart.y + 6, 6, 8);
-
     ctx.restore();
-
-    // HUD
-    ctx.fillStyle = "white";
-    ctx.font = "16px Arial";
-    ctx.fillText(track.name, 10, 20);
 }
 
-// ===============================
-// Game Loop
-// ===============================
+// ============================
+// Main Render
+// ============================
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawTrack();
+    drawKart();
+
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.fillText("Mushroom Circuit", 10, 20);
+}
+
+// ============================
+// Loop
+// ============================
 function loop() {
     update();
     draw();
@@ -197,4 +159,3 @@ function loop() {
 }
 
 loop();
-``
